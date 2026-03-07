@@ -22,3 +22,6 @@ ESP_IP = "192.168.1.50"
 
 # LOGI
 LOG_FILE = "logs/system.log"
+
+MIN_PLATE_WIDTH = 120
+MIN_PLATE_HEIGHT = 35
