@@ -57,6 +57,8 @@ class plateOCR:
         texts = []
 
         for (_, text, score) in results:
+            if score < 0.4:
+                continue
 
             text = text.upper()
             text = ''.join(filter(str.isalnum, text))
@@ -64,13 +66,11 @@ class plateOCR:
             if self.plate_regex(text):
                 texts.append(text)
 
-        # zapisujemy wszystkie wyniki
         for t in texts:
             self.memory[track_id].append(t)
         
         self.memory[track_id] = self.memory[track_id][-20:]
 
-        # jeśli mamy wystarczająco danych
         if len(self.memory[track_id]) >= 6:
 
             most_common = Counter(self.memory[track_id]).most_common(1)[0][0]

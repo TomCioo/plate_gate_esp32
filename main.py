@@ -3,8 +3,12 @@ import cv2 as cv
 from detector.plateDetector import plateDetector
 from tracker.plateTracker import plateTracker
 from ocr.plateReader import plateOCR
+from decision.decisionManager import decisionManager
+from gate.gateController import gateController
+from database.database import loadWhitelist
 import numpy as np
 import time
+
 
 def main():
     cap = cv.VideoCapture(config.VIDEO_SOURCE)
@@ -16,6 +20,8 @@ def main():
     detector = plateDetector(config.MODEL_PATH)
     tracker = plateTracker()
     ocr = plateOCR()
+    gate = gateController()
+    whitelist = loadWhitelist()
     openedIds = set()
     lastOpenTime = 0
     idFrameCounter = {} #jak dlugo jest widoczna tablica np 20 klatek
@@ -51,8 +57,8 @@ def main():
                 text = ocr.read(plate_crop,id)
             idFrameCounter[id] = idFrameCounter.get(id,0) + 1
             currentIdsInFrame.add(id)
-            if(id not in openedIds and idFrameCounter[id] >= config.MIN_FRAMES_FOR_OPEN and time.time() - lastOpenTime > config.GLOBAL_COOLDOWN):
-                print("OTWIERANIE BRAMY", id)
+            if decisionManager.should_open_gate(id, text, idFrameCounter, openedIds, lastOpenTime,whitelist):
+                gate.openGate(text)
 
                 openedIds.add(id)
                 lastOpenTime = time.time()
