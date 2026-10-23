@@ -18,7 +18,7 @@ GLOBAL_COOLDOWN = 10
 MIN_FRAMES_FOR_OPEN = 5
 
 # ESP
-ESP_IP = "192.168.1.50"
+ESP_IP = "192.168.1.34"
 
 # LOGI
 LOG_FILE = "logs/system.log"

@@ -1,6 +1,0 @@
-venv\Scripts\activate
-git pull (jak z innego kompa lub cos)
-git status
-git add .
-git commit -m "Dodano obsługę kamery"
-git push

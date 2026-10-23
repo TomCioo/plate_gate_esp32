@@ -4,7 +4,7 @@ from detector.plateDetector import plateDetector
 from tracker.plateTracker import plateTracker
 from ocr.plateReader import plateOCR
 from decision.decisionManager import decisionManager
-from gate.gateController import gateController
+from gate.gateController import GateController
 from database.database import loadWhitelist
 import numpy as np
 import time
@@ -16,11 +16,12 @@ def main():
     if not cap.isOpened():
         print("Nie mozna otworzyc zrodla video")
         return
-   
+    
+    decision = decisionManager()
     detector = plateDetector(config.MODEL_PATH)
     tracker = plateTracker()
     ocr = plateOCR()
-    gate = gateController()
+    gate = GateController(config.ESP_IP)
     whitelist = loadWhitelist()
     openedIds = set()
     lastOpenTime = 0
@@ -39,6 +40,8 @@ def main():
             x1, y1, x2, y2, id = map(int, obj)
             width = x2 - x1
             height = y2 - y1
+            memory_list = ocr.memory.get(id, [])
+            text = memory_list[-1] if memory_list else ""
 
             if width < config.MIN_PLATE_WIDTH or height < config.MIN_PLATE_HEIGHT:
                 continue
@@ -53,13 +56,13 @@ def main():
             #if plate_crop.size != 0:
                 #cv.imshow("plate", plate_crop)
             
-            if idFrameCounter[id] % 3 == 0:
-                text = ocr.read(plate_crop,id)
             idFrameCounter[id] = idFrameCounter.get(id,0) + 1
+            if idFrameCounter[id] % 5 == 0:
+                text = ocr.read(plate_crop,id)
             currentIdsInFrame.add(id)
-            if decisionManager.should_open_gate(id, text, idFrameCounter, openedIds, lastOpenTime,whitelist):
+            if decision.shouldOpenGate(id, text, idFrameCounter, openedIds, lastOpenTime,whitelist):
                 gate.openGate(text)
-
+                #print("otwirranie bramy")
                 openedIds.add(id)
                 lastOpenTime = time.time()
 
@@ -83,22 +86,6 @@ def main():
 
     cap.release()
     cv.destroyAllWindows()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     main()
