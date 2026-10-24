@@ -1,15 +1,16 @@
-import easyocr
-import cv2 as cv
-import numpy as np
-from collections import defaultdict, Counter
 import re
+from collections import Counter, defaultdict
 
+import cv2 as cv
+import easyocr
 
-class plateOCR:
+import config
+
+class PlateOCR:
 
     def __init__(self):
 
-        self.reader = easyocr.Reader(['en'], gpu=True)
+        self.reader = easyocr.Reader(['en'], gpu=config.OCR_USE_GPU)
 
         self.memory = defaultdict(list)
 
@@ -37,10 +38,7 @@ class plateOCR:
 
         pattern = r'^[A-Z]{2,3}[A-Z0-9]{4,5}$'
 
-        if re.match(pattern, text):
-            return True
-
-        return False
+        return re.match(pattern,text) is not None
 
 
     def read(self, plate_img, track_id):
@@ -57,7 +55,7 @@ class plateOCR:
         texts = []
 
         for (_, text, score) in results:
-            if score < 0.4:
+            if score < config.OCR_CONFIDENCE:
                 continue
 
             text = text.upper()
@@ -69,9 +67,9 @@ class plateOCR:
         for t in texts:
             self.memory[track_id].append(t)
         
-        self.memory[track_id] = self.memory[track_id][-20:]
+        self.memory[track_id] = self.memory[track_id][-config.OCR_HISTORY_SIZE:]
 
-        if len(self.memory[track_id]) >= 6:
+        if len(self.memory[track_id]) >= config.OCR_VOTING_MIN_READS:
 
             most_common = Counter(self.memory[track_id]).most_common(1)[0][0]
 

@@ -1,7 +1,8 @@
 import csv
 import os
 
-def loadWhitelist(path=None):
+
+def load_whitelist(path=None):
     if path is None:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         path = os.path.join(base_dir, "whitelist.csv")

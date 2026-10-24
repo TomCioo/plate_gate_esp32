@@ -1,9 +1,11 @@
-from .sort import Sort, KalmanBoxTracker
 import numpy as np
 
-class plateTracker():
+from .sort import Sort
+import config
+
+class PlateTracker:
     def __init__(self):
-        self.tracker = Sort(max_age=10,min_hits=3,iou_threshold=0.3)
+        self.tracker = Sort(max_age=config.TRACKER_MAX_AGE,min_hits=config.TRACKER_MIN_HITS,iou_threshold=config.TRACKER_IOU_THRESHOLD)
 
 
     def update(self,detections):

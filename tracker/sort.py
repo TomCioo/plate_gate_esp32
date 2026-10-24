@@ -1,5 +1,7 @@
+# (SORT, autor Alex Bewley) (GPL-3.0)
 import numpy as np
 from filterpy.kalman import KalmanFilter
+
 
 def linear_assignment(cost_matrix):
     try:
