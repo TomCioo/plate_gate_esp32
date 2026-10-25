@@ -6,6 +6,7 @@ import easyocr
 
 import config
 
+
 class PlateOCR:
 
     def __init__(self):

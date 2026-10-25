@@ -1,7 +1,9 @@
 import numpy as np
 
-from .sort import Sort
 import config
+
+from .sort import Sort
+
 
 class PlateTracker:
     def __init__(self):

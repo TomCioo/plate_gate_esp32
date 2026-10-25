@@ -54,8 +54,6 @@ def main():
             y2p = min(frame.shape[0], y2+pad)
 
             plate_crop = frame[y1p:y2p, x1p:x2p]
-            #if plate_crop.size != 0:
-                #cv.imshow("plate", plate_crop)
             
             id_frame_counter[track_id] = id_frame_counter.get(track_id,0) + 1
             if id_frame_counter[track_id] % config.OCR_INTERVAL_FRAMES == 0:
@@ -63,18 +61,14 @@ def main():
             current_ids_in_frame.add(track_id)
             if decision.should_open_gate(track_id, text, id_frame_counter, opened_ids, last_open_time,whitelist):
                 gate.open_gate(text)
-                #print("otwirranie bramy")
                 opened_ids.add(track_id)
                 last_open_time = time.time()
 
             cv.rectangle(frame,(x1,y1),(x2,y2),(0,0,255),2)
             cv.putText(frame,f'ID:{track_id} {text}',(x1,y1 - 10),cv.FONT_HERSHEY_PLAIN,1,(0,255,0),2)
-            #cv.putText(frame,f'{id}',(x1,y1 - 10),cv.FONT_HERSHEY_PLAIN,1,(0,0,255),2)
-            
-
         
         for track_id in list(id_frame_counter.keys()):
-            if id not in current_ids_in_frame:
+            if track_id not in current_ids_in_frame:
                 del id_frame_counter[track_id]
                 if track_id in ocr.memory:
                     del ocr.memory[track_id]
