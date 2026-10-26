@@ -1,4 +1,4 @@
-# (SORT, autor Alex Bewley) (GPL-3.0)
+# (SORT, autor Alex Bewley) (GPL-3.0) https://github.com/abewley/sort
 import numpy as np
 from filterpy.kalman import KalmanFilter
 

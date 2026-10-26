@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 .env
 helpery/
+set_roi.py

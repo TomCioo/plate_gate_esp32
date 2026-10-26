@@ -1,13 +1,14 @@
 import numpy as np
 
-import config
-
 from .sort import Sort
 
 
 class PlateTracker:
-    def __init__(self):
-        self.tracker = Sort(max_age=config.TRACKER_MAX_AGE,min_hits=config.TRACKER_MIN_HITS,iou_threshold=config.TRACKER_IOU_THRESHOLD)
+    def __init__(self,max_age,min_hits,iou_threshold):
+        self.max_age = max_age
+        self.min_hits = min_hits
+        self.iou_threshold = iou_threshold
+        self.tracker = Sort(max_age=self.max_age,min_hits=self.min_hits,iou_threshold=self.iou_threshold)
 
 
     def update(self,detections):

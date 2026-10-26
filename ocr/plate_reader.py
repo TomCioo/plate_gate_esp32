@@ -4,17 +4,16 @@ from collections import Counter, defaultdict
 import cv2 as cv
 import easyocr
 
-import config
-
 
 class PlateOCR:
 
-    def __init__(self):
-
-        self.reader = easyocr.Reader(['en'], gpu=config.OCR_USE_GPU)
-
+    def __init__(self,ocr_use_gpu,ocr_confidence,ocr_history_size,ocr_voting_min_reads):
+        self.ocr_use_gpu = ocr_use_gpu
+        self.reader = easyocr.Reader(['en'], gpu=self.ocr_use_gpu)
         self.memory = defaultdict(list)
-
+        self.ocr_confidence = ocr_confidence
+        self.ocr_history_size = ocr_history_size
+        self.ocr_voting_min_reads = ocr_voting_min_reads
 
     def preprocess(self, img):
 
@@ -56,7 +55,7 @@ class PlateOCR:
         texts = []
 
         for (_, text, score) in results:
-            if score < config.OCR_CONFIDENCE:
+            if score < self.ocr_confidence:
                 continue
 
             text = text.upper()
@@ -68,9 +67,9 @@ class PlateOCR:
         for t in texts:
             self.memory[track_id].append(t)
         
-        self.memory[track_id] = self.memory[track_id][-config.OCR_HISTORY_SIZE:]
+        self.memory[track_id] = self.memory[track_id][-self.ocr_history_size:]
 
-        if len(self.memory[track_id]) >= config.OCR_VOTING_MIN_READS:
+        if len(self.memory[track_id]) >= self.ocr_voting_min_reads:
 
             most_common = Counter(self.memory[track_id]).most_common(1)[0][0]
 

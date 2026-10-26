@@ -1,15 +1,11 @@
-import time
-
 import requests
-
-import config
 
 
 class GateController:
 
     def __init__(self, esp_ip):
-        self.esp_ip = config.ESP_IP
-        self.last_open_time = 0
+        self.esp_ip = esp_ip
+ 
 
     def open_gate(self, plate):
 
@@ -21,9 +17,11 @@ class GateController:
 
             if response.status_code == 200:
                 print("BRAMA OTWARTA dla:", plate)
-                self.last_open_time = time.time()
+                return True
             else:
                 print("ESP odpowiedzialo bledem:", response.status_code)
+                return False
 
         except requests.exceptions.RequestException as e:
             print("BLAD POLACZENIA Z ESP:", e)
+            return False
