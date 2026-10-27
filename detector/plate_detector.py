@@ -7,7 +7,7 @@ class PlateDetector:
         self.detection_confidence = detection_confidence
 
     def detect(self,frame):
-        results = self.model(frame,stream=True)
+        results = self.model(frame,stream=True,verbose=False)
 
         plates = []
 
@@ -20,16 +20,3 @@ class PlateDetector:
                     plates.append((x1,y1,x2,y2,conf))
 
         return plates
-
-       
-
-
-
-
-
-
-
-
-
-
-

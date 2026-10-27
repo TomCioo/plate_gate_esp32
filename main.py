@@ -6,6 +6,7 @@ import config
 from database.database import load_whitelist
 from decision.decision_manager import DecisionManager
 from detector.plate_detector import PlateDetector
+from gate.fake_gate import FakeGate
 from gate.gate_controller import GateController
 from ocr.plate_reader import PlateOCR
 from tracker.plate_tracker import PlateTracker
@@ -22,7 +23,11 @@ def main():
         detector = PlateDetector(model_path=config.MODEL_PATH,detection_confidence=config.DETECTION_CONFIDENCE)
         tracker = PlateTracker(max_age=config.TRACKER_MAX_AGE,min_hits=config.TRACKER_MIN_HITS,iou_threshold=config.TRACKER_IOU_THRESHOLD)
         ocr = PlateOCR(ocr_use_gpu=config.OCR_USE_GPU,ocr_confidence=config.OCR_CONFIDENCE,ocr_history_size=config.OCR_HISTORY_SIZE,ocr_voting_min_reads=config.OCR_VOTING_MIN_READS)
-        gate = GateController(config.ESP_IP)
+
+        if config.USE_FAKE_GATE:
+            gate = FakeGate(config.FAKE_GATE_SUCCESS)
+        else:
+            gate = GateController(config.ESP_IP)
         whitelist = load_whitelist()
         opened_ids = set()
         last_open_time = None
