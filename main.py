@@ -32,6 +32,7 @@ def main():
         opened_ids = set()
         last_open_time = None
         id_frame_counter = {} #jak dlugo jest widoczna tablica np 20 klatek
+        missing_frames = {}
 
         while True: 
             success,frame = cap.read()
@@ -61,6 +62,7 @@ def main():
                 plate_crop = frame[y1p:y2p, x1p:x2p]
                 
                 id_frame_counter[track_id] = id_frame_counter.get(track_id,0) + 1
+                missing_frames[track_id] = 0
                 if id_frame_counter[track_id] % config.OCR_INTERVAL_FRAMES == 0:
                     text = ocr.read(plate_crop,track_id)
                 current_ids_in_frame.add(track_id)
@@ -77,9 +79,12 @@ def main():
             
             for track_id in list(id_frame_counter.keys()):
                 if track_id not in current_ids_in_frame:
-                    del id_frame_counter[track_id]
-                    if track_id in ocr.memory:
-                        del ocr.memory[track_id]
+                    missing_frames[track_id] += 1
+                    if missing_frames[track_id] >= config.MAX_MISSING_FRAMES:
+                        del id_frame_counter[track_id]
+                        del missing_frames[track_id]
+                        if track_id in ocr.memory:
+                            del ocr.memory[track_id]
 
             
             resized_frame = cv.resize(frame, (config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT))
