@@ -14,7 +14,7 @@ class DecisionManager:
             return False
             
         frames_ok = id_frame_counter.get(track_id, 0) >= self.min_frames_for_open
-        plate_ok = text != "" and text in whitelist
+        plate_ok = text is not None and text in whitelist
         not_opened = track_id not in opened_ids
         if last_open_time is None:
             cooldown_ok = True

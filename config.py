@@ -7,7 +7,7 @@ MODEL_PATH = "models/license_plate_detector.pt"
 # ESP
 ESP_IP = "192.168.1.34"
 USE_FAKE_GATE = True
-FAKE_GATE_SUCCESS = False
+FAKE_GATE_SUCCESS = True
 
 # LOGI
 LOG_FILE = "logs/system.log"

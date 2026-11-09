@@ -9,6 +9,7 @@ from detector.plate_detector import PlateDetector
 from gate.fake_gate import FakeGate
 from gate.gate_controller import GateController
 from ocr.plate_reader import PlateOCR
+from ocr.ocr_voting import OcrVoting
 from tracker.plate_tracker import PlateTracker
 
 
@@ -22,7 +23,8 @@ def main():
         decision = DecisionManager(open_cooldown=config.OPEN_COOLDOWN,min_frames_for_open=config.MIN_FRAMES_FOR_OPEN,retry_cooldown=config.RETRY_COOLDOWN)
         detector = PlateDetector(model_path=config.MODEL_PATH,detection_confidence=config.DETECTION_CONFIDENCE)
         tracker = PlateTracker(max_age=config.TRACKER_MAX_AGE,min_hits=config.TRACKER_MIN_HITS,iou_threshold=config.TRACKER_IOU_THRESHOLD)
-        ocr = PlateOCR(ocr_use_gpu=config.OCR_USE_GPU,ocr_confidence=config.OCR_CONFIDENCE,ocr_history_size=config.OCR_HISTORY_SIZE,ocr_voting_min_reads=config.OCR_VOTING_MIN_READS)
+        ocr = PlateOCR(ocr_use_gpu=config.OCR_USE_GPU,ocr_confidence=config.OCR_CONFIDENCE)
+        ocr_voting = OcrVoting(ocr_voting_min_ratio=config.OCR_VOTING_MIN_RATIO,ocr_voting_min_reads=config.OCR_VOTING_MIN_READS,ocr_history_size=config.OCR_HISTORY_SIZE)
 
         if config.USE_FAKE_GATE:
             gate = FakeGate(config.FAKE_GATE_SUCCESS)
@@ -49,8 +51,7 @@ def main():
                 height = y2 - y1
                 tracked_ids[track_id] = 0
                 current_ids_in_frame.add(track_id)
-                memory_list = ocr.memory.get(track_id, [])
-                text = memory_list[-1] if memory_list else ""
+                confirmed_plate = ocr_voting.get_confirmed_plate(track_id)
     
                 if width >= config.MIN_PLATE_WIDTH and height >= config.MIN_PLATE_HEIGHT:
                     id_frame_counter[track_id] = id_frame_counter.get(track_id,0) + 1
@@ -62,17 +63,20 @@ def main():
     
                     plate_crop = frame[y1p:y2p, x1p:x2p]
                     if id_frame_counter[track_id] % config.OCR_INTERVAL_FRAMES == 0:
-                        text = ocr.read(plate_crop,track_id)
-                    if decision.should_open_gate(track_id, text, id_frame_counter, opened_ids, last_open_time,whitelist):
+                        text = ocr.read(plate_crop)
+                        ocr_voting.add_reading(track_id,text)
+
+                    if decision.should_open_gate(track_id, confirmed_plate, id_frame_counter, opened_ids, last_open_time,whitelist):
                         decision.mark_attempt()
-                        if gate.open_gate(text):
+                        if gate.open_gate(confirmed_plate):
                             opened_ids.add(track_id)
                             last_open_time = time.monotonic()
                         else:
                             print("Nie udalo sie otworzyc")
 
+                display_text = confirmed_plate if confirmed_plate is not None else "?"
                 cv.rectangle(frame,(x1,y1),(x2,y2),(0,0,255),2)
-                cv.putText(frame,f'ID:{track_id} {text}',(x1,y1 - 10),cv.FONT_HERSHEY_PLAIN,1,(0,255,0),2)
+                cv.putText(frame,f'ID:{track_id} {display_text}',(x1,y1 - 10),cv.FONT_HERSHEY_PLAIN,1,(0,255,0),2)
             
             for track_id in list(tracked_ids.keys()):
                 if track_id not in current_ids_in_frame:
@@ -81,8 +85,7 @@ def main():
                     if tracked_ids[track_id] >= config.MAX_MISSING_FRAMES:
                         del tracked_ids[track_id]
                         id_frame_counter.pop(track_id, None)
-                        ocr.memory.pop(track_id, None)
-
+                        ocr_voting.forget_track(track_id)
             
             resized_frame = cv.resize(frame, (config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT))
             cv.imshow("Frame",resized_frame)
