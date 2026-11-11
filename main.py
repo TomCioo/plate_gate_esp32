@@ -1,5 +1,3 @@
-import time
-
 import cv2 as cv
 
 import config
@@ -20,7 +18,7 @@ def main():
             print("Nie mozna otworzyc zrodla video")
             return
 
-        decision = DecisionManager(open_cooldown=config.OPEN_COOLDOWN,min_frames_for_open=config.MIN_FRAMES_FOR_OPEN,retry_cooldown=config.RETRY_COOLDOWN)
+        decision = DecisionManager(open_cooldown=config.OPEN_COOLDOWN,retry_cooldown=config.RETRY_COOLDOWN,whitelist=load_whitelist())
         detector = PlateDetector(model_path=config.MODEL_PATH,detection_confidence=config.DETECTION_CONFIDENCE)
         tracker = PlateTracker(max_age=config.TRACKER_MAX_AGE,min_hits=config.TRACKER_MIN_HITS,iou_threshold=config.TRACKER_IOU_THRESHOLD)
         ocr = PlateOCR(ocr_use_gpu=config.OCR_USE_GPU,ocr_confidence=config.OCR_CONFIDENCE)
@@ -30,9 +28,6 @@ def main():
             gate = FakeGate(config.FAKE_GATE_SUCCESS)
         else:
             gate = GateController(config.ESP_IP)
-        whitelist = load_whitelist()
-        opened_ids = set()
-        last_open_time = None
         id_frame_counter = {} #klatki w ktorych tablica jest czytelna
         tracked_ids = {}  #id samochodu : missing frames
 
@@ -52,7 +47,7 @@ def main():
                 tracked_ids[track_id] = 0
                 current_ids_in_frame.add(track_id)
                 confirmed_plate = ocr_voting.get_confirmed_plate(track_id)
-    
+                
                 if width >= config.MIN_PLATE_WIDTH and height >= config.MIN_PLATE_HEIGHT:
                     id_frame_counter[track_id] = id_frame_counter.get(track_id,0) + 1
                     pad = config.PLATE_CROP_PADDING
@@ -66,12 +61,11 @@ def main():
                         text = ocr.read(plate_crop)
                         ocr_voting.add_reading(track_id,text)
 
-                    if decision.should_open_gate(track_id, confirmed_plate, id_frame_counter, opened_ids, last_open_time,whitelist):
-                        decision.mark_attempt()
-                        if gate.open_gate(confirmed_plate):
-                            opened_ids.add(track_id)
-                            last_open_time = time.monotonic()
-                        else:
+                    if decision.should_open_gate(track_id, confirmed_plate):
+                        success = gate.open_gate(confirmed_plate)
+                        decision.report_attempt(track_id, success)
+
+                        if not success:
                             print("Nie udalo sie otworzyc")
 
                 display_text = confirmed_plate if confirmed_plate is not None else "?"
@@ -86,6 +80,7 @@ def main():
                         del tracked_ids[track_id]
                         id_frame_counter.pop(track_id, None)
                         ocr_voting.forget_track(track_id)
+                        decision.forget_track(track_id)
             
             resized_frame = cv.resize(frame, (config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT))
             cv.imshow("Frame",resized_frame)

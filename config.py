@@ -1,5 +1,5 @@
 # ŹRÓDŁO WIDEO
-VIDEO_SOURCE = "data/test_videos/test.mp4"  # później RTSP
+VIDEO_SOURCE = "data/test_videos/test3.mp4"  # później RTSP
 
 # MODEL
 MODEL_PATH = "models/license_plate_detector.pt"

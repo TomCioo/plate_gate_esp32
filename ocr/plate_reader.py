@@ -44,9 +44,9 @@ class PlateOCR:
 
         plate_img = cv.resize(plate_img, None, fx=2, fy=2, interpolation=cv.INTER_CUBIC)
 
-        processed = self.preprocess(plate_img)
+        #processed = self.preprocess(plate_img)
 
-        results = self.reader.readtext(processed)
+        results = self.reader.readtext(plate_img)
         best_result = None
         best_score = 0
 
