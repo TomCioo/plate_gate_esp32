@@ -8,3 +8,4 @@ numpy
 filterpy
 scikit-image
 lap
+pytest

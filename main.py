@@ -46,7 +46,7 @@ def main():
                 height = y2 - y1
                 tracked_ids[track_id] = 0
                 current_ids_in_frame.add(track_id)
-                confirmed_plate = ocr_voting.get_confirmed_plate(track_id)
+            
                 
                 if width >= config.MIN_PLATE_WIDTH and height >= config.MIN_PLATE_HEIGHT:
                     id_frame_counter[track_id] = id_frame_counter.get(track_id,0) + 1
@@ -61,12 +61,15 @@ def main():
                         text = ocr.read(plate_crop)
                         ocr_voting.add_reading(track_id,text)
 
-                    if decision.should_open_gate(track_id, confirmed_plate):
-                        success = gate.open_gate(confirmed_plate)
-                        decision.report_attempt(track_id, success)
+                confirmed_plate = ocr_voting.get_confirmed_plate(track_id)
 
-                        if not success:
-                            print("Nie udalo sie otworzyc")
+                if width >= config.MIN_PLATE_WIDTH and height >= config.MIN_PLATE_HEIGHT:
+                    if decision.try_open_gate(track_id, confirmed_plate):
+                        isOpened = gate.open_gate(confirmed_plate)
+                        decision.report_attempt(track_id, isOpened)
+
+                        if not isOpened:
+                            print("Failed to open")
 
                 display_text = confirmed_plate if confirmed_plate is not None else "?"
                 cv.rectangle(frame,(x1,y1),(x2,y2),(0,0,255),2)

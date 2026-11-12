@@ -13,7 +13,7 @@ class DecisionManager:
         self.opened_ids = set()
         self.pending_ids = set()
         
-    def should_open_gate(self,track_id,text):
+    def try_open_gate(self,track_id,plate):
         current_time = time.monotonic()
 
         if track_id in self.pending_ids:
@@ -25,7 +25,7 @@ class DecisionManager:
         if self.last_open_time is not None and current_time - self.last_open_time < self.open_cooldown:
             return False
     
-        plate_ok = text is not None and text in self.whitelist
+        plate_ok = plate is not None and plate in self.whitelist
         not_opened = track_id not in self.opened_ids
      
         if plate_ok and not_opened:
@@ -36,12 +36,12 @@ class DecisionManager:
 
     def report_attempt(self,track_id,success):
         if track_id not in self.pending_ids:
-            return
+            raise ValueError(f"Track ID {track_id} is not in pending_ids")
 
         current_time = time.monotonic()
 
         self.last_attempt_time = current_time
-        self.pending_ids.discard(track_id)
+        self.pending_ids.remove(track_id)
         
         if success:
             self.opened_ids.add(track_id)
