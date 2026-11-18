@@ -11,6 +11,25 @@ from ocr.ocr_voting import OcrVoting
 from tracker.plate_tracker import PlateTracker
 
 
+def is_valid_plate_size(width,height,min_plate_width,min_plate_height):
+    return width >= min_plate_width and height >= min_plate_height
+
+
+def crop_plate(bbox,pad,frame):
+    x1p = max(0, bbox[0]-pad)
+    y1p = max(0, bbox[1]-pad)
+    x2p = min(frame.shape[1], bbox[2]+pad)
+    y2p = min(frame.shape[0], bbox[3]+pad)
+
+    return frame[y1p:y2p, x1p:x2p]
+
+
+def draw_plate_overlay(confirmed_plate,frame,bbox,track_id):
+    display_text = confirmed_plate if confirmed_plate is not None else "?"
+    cv.rectangle(frame,(bbox[0],bbox[1]),(bbox[2],bbox[3]),(0,0,255),2)
+    cv.putText(frame,f'ID:{track_id} {display_text}',(bbox[0],bbox[1] - 10),cv.FONT_HERSHEY_PLAIN,1,(0,255,0),2)
+
+    
 def main():
     cap = cv.VideoCapture(config.VIDEO_SOURCE)
     try:
@@ -29,7 +48,7 @@ def main():
         else:
             gate = GateController(config.ESP_IP)
         id_frame_counter = {} #klatki w ktorych tablica jest czytelna
-        tracked_ids = {}  #id samochodu : missing frames
+        vehicles_with_missing_frames = {}  #id samochodu : missing frames
 
         while True: 
             success,frame = cap.read()
@@ -42,45 +61,39 @@ def main():
 
             for obj in tracked_objects:
                 x1, y1, x2, y2, track_id = map(int, obj)
+                bbox = (x1, y1, x2, y2)
                 width = x2 - x1
                 height = y2 - y1
-                tracked_ids[track_id] = 0
+                vehicles_with_missing_frames[track_id] = 0
                 current_ids_in_frame.add(track_id)
             
-                
-                if width >= config.MIN_PLATE_WIDTH and height >= config.MIN_PLATE_HEIGHT:
+                has_valid_plate_size = is_valid_plate_size(width,height,config.MIN_PLATE_WIDTH,config.MIN_PLATE_HEIGHT)
+                if is_valid_plate_size:
                     id_frame_counter[track_id] = id_frame_counter.get(track_id,0) + 1
-                    pad = config.PLATE_CROP_PADDING
-                    x1p = max(0, x1-pad)
-                    y1p = max(0, y1-pad)
-                    x2p = min(frame.shape[1], x2+pad)
-                    y2p = min(frame.shape[0], y2+pad)
     
-                    plate_crop = frame[y1p:y2p, x1p:x2p]
+                    plate_crop = crop_plate(bbox,config.PLATE_CROP_PADDING,frame)
                     if id_frame_counter[track_id] % config.OCR_INTERVAL_FRAMES == 0:
                         text = ocr.read(plate_crop)
                         ocr_voting.add_reading(track_id,text)
 
                 confirmed_plate = ocr_voting.get_confirmed_plate(track_id)
 
-                if width >= config.MIN_PLATE_WIDTH and height >= config.MIN_PLATE_HEIGHT:
+                if has_valid_plate_size:
                     if decision.try_open_gate(track_id, confirmed_plate):
-                        isOpened = gate.open_gate(confirmed_plate)
-                        decision.report_attempt(track_id, isOpened)
+                        is_opened = gate.open_gate(confirmed_plate)
+                        decision.report_attempt(track_id, is_opened)
 
-                        if not isOpened:
+                        if not is_opened:
                             print("Failed to open")
 
-                display_text = confirmed_plate if confirmed_plate is not None else "?"
-                cv.rectangle(frame,(x1,y1),(x2,y2),(0,0,255),2)
-                cv.putText(frame,f'ID:{track_id} {display_text}',(x1,y1 - 10),cv.FONT_HERSHEY_PLAIN,1,(0,255,0),2)
+                draw_plate_overlay(confirmed_plate,frame,bbox,track_id)
             
-            for track_id in list(tracked_ids.keys()):
+            for track_id in list(vehicles_with_missing_frames.keys()):
                 if track_id not in current_ids_in_frame:
-                    tracked_ids[track_id] += 1
+                    vehicles_with_missing_frames[track_id] += 1
 
-                    if tracked_ids[track_id] >= config.MAX_MISSING_FRAMES:
-                        del tracked_ids[track_id]
+                    if vehicles_with_missing_frames[track_id] >= config.MAX_MISSING_FRAMES:
+                        del vehicles_with_missing_frames[track_id]
                         id_frame_counter.pop(track_id, None)
                         ocr_voting.forget_track(track_id)
                         decision.forget_track(track_id)
