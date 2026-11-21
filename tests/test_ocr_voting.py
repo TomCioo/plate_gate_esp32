@@ -1,4 +1,3 @@
-
 import pytest
 
 from ocr.ocr_voting import OcrVoting

@@ -1,0 +1,3 @@
+import pytest
+
+from tracker.vehicle_lifecycle import VehicleLifecycle

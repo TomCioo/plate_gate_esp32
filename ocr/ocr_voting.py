@@ -4,7 +4,7 @@ from collections import defaultdict,Counter, deque
 class OcrVoting:
     def __init__(self,ocr_voting_min_ratio,ocr_voting_min_reads,ocr_history_size):
         if ocr_voting_min_reads < 1:
-                    raise ValueError("min_reads musi być większe lub równe 1")
+            raise ValueError("min_reads musi być większe lub równe 1")
         
         if ocr_history_size < 1:
             raise ValueError("history_size musi być większe lub równe 1")
