@@ -4,6 +4,7 @@ import config
 from database.database import load_whitelist
 from decision.decision_manager import DecisionManager
 from detector.plate_detector import PlateDetector
+from frame_utils import crop_plate, draw_plate_overlay, is_valid_plate_size
 from gate.fake_gate import FakeGate
 from gate.gate_controller import GateController
 from ocr.plate_reader import PlateOCR
@@ -11,25 +12,7 @@ from ocr.ocr_voting import OcrVoting
 from tracker.plate_tracker import PlateTracker
 
 
-def is_valid_plate_size(width,height,min_plate_width,min_plate_height):
-    return width >= min_plate_width and height >= min_plate_height
-
-
-def crop_plate(bbox,pad,frame):
-    x1p = max(0, bbox[0]-pad)
-    y1p = max(0, bbox[1]-pad)
-    x2p = min(frame.shape[1], bbox[2]+pad)
-    y2p = min(frame.shape[0], bbox[3]+pad)
-
-    return frame[y1p:y2p, x1p:x2p]
-
-
-def draw_plate_overlay(confirmed_plate,frame,bbox,track_id):
-    display_text = confirmed_plate if confirmed_plate is not None else "?"
-    cv.rectangle(frame,(bbox[0],bbox[1]),(bbox[2],bbox[3]),(0,0,255),2)
-    cv.putText(frame,f'ID:{track_id} {display_text}',(bbox[0],bbox[1] - 10),cv.FONT_HERSHEY_PLAIN,1,(0,255,0),2)
-
-    
+  
 def main():
     cap = cv.VideoCapture(config.VIDEO_SOURCE)
     try:
@@ -68,7 +51,7 @@ def main():
                 current_ids_in_frame.add(track_id)
             
                 has_valid_plate_size = is_valid_plate_size(width,height,config.MIN_PLATE_WIDTH,config.MIN_PLATE_HEIGHT)
-                if is_valid_plate_size:
+                if has_valid_plate_size:
                     id_frame_counter[track_id] = id_frame_counter.get(track_id,0) + 1
     
                     plate_crop = crop_plate(bbox,config.PLATE_CROP_PADDING,frame)
