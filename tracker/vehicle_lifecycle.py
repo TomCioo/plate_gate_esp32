@@ -8,7 +8,7 @@ class VehicleLifecycle:
         self.current_ids_in_frame = set()
         
 
-    def mark_seen_car(self,track_id):
+    def mark_seen_vehicle(self,track_id):
         self.vehicles_with_missing_frames[track_id] = 0
         self.current_ids_in_frame.add(track_id)
 
@@ -32,6 +32,9 @@ class VehicleLifecycle:
 
 
     def increment_readable_frame(self,track_id):
-        self.id_frame_counter[track_id] = self.id_frame_counter.get(track_id,0) + 1
+        if track_id not in self.vehicles_with_missing_frames:
+            raise ValueError(f"Unknown track ID: {track_id}")
+
+        self.id_frame_counter[track_id] = self.id_frame_counter.get(track_id, 0) + 1
         return self.id_frame_counter[track_id]
 

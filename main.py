@@ -46,7 +46,7 @@ def main():
                 bbox = (x1, y1, x2, y2)
                 width = x2 - x1
                 height = y2 - y1
-                lifecycle.mark_seen_car(track_id)
+                lifecycle.mark_seen_vehicle(track_id)
             
                 has_valid_plate_size = is_valid_plate_size(width,height,config.MIN_PLATE_WIDTH,config.MIN_PLATE_HEIGHT)
                 if has_valid_plate_size:
